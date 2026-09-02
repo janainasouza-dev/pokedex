@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokedex</title>
+  <style>
+     body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0% );
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    #pokemonImage {
+    image-rendering: pixelated; /* Mantém o estilo pixel art */
+    image-rendering: crisp-edges; /* Para navegadores antigos */
+    width: 150px; /* Ajuste conforme necessário */
+    height: 150px;
+  }
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pokedex</h1>
+   
+    <div class="search-box">
+      <input type="text" id="pokemonInput" placeholder="Digite o nome do Pokémon" autofocus>
+      <button onclick="buscarPokemon()">Buscar</button>
+    </div>
+
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+    </div>
+
+
+    <div id="pokemonCard">
+      <img id="pokemonImage" alt="Pokémon">
+      <div id="pokemonName"></div>
+      <div id="pokemonId"></div>
+     
+      <div class="types" id="typesContainer"></div>
+     
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Altura</label>
+          <span id="pokemonHeight"></span>
+        </div>
+        <div class="info-item">
+          <label>Peso</label>
+          <span id="pokemonWeight"></span>
+        </div>
+        <div class="info-item">
+          <label>Habilidade</label>
+          <span id="pokemonAbility"></span>
+        </div>
+        <div class="info-item">
+          <label>Experiência Base</label>
+          <span id="pokemonExp"></span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="error-message" id="errorMessage">
+    </div>
+
+
+      
+      
+      
+    </div>
+  </div>
+
+
+  <script>
+    function buscarPokemonAPI(nome) {
+      const url = `https://pokeapi.co/api/v2/pokemon/${nome.toLowerCase()}`;
+      return fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Pokémon não encontrado!");
+          }
+          return response.json();
+        });
+    }
+
+
+    function mostrarPokemon(data) {
+      // Imagem (Sprite oficial)
+      // Forçar sprite pixelada de versões antigas
+    // Para garantir pixel art em todas as gerações
+    const getPixelSprite = (data) => {
+    // Ordem de prioridade para sprites pixelados
+    return data.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default ||
+           data.sprites.versions?.['generation-iv']?.['diamond-pearl']?.front_default ||
+           data.sprites.versions?.['generation-iii']?.['emerald']?.front_default ||
+           data.sprites.versions?.['generation-ii']?.['gold']?.front_default ||
+           data.sprites.versions?.['generation-i']?.['red-blue']?.front_default ||
+           data.sprites.front_default ||
+           data.sprites.other?.home?.front_default;
+            };
+
+        const imageUrl = getPixelSprite(data);
+        document.getElementById('pokemonImage').src = imageUrl;
+        document.getElementById('pokemonImage').alt = data.name;
+
+
+      // Nome
+      document.getElementById('pokemonName').textContent = data.name.charAt(0).toUpperCase() + data.name.slice(1);
+     
+      // ID
+      document.getElementById('pokemonId').textContent = `#${String(data.id).padStart(4, '0')}`;
+
+
+      // Altura (decímetros -> metros)
+      const heightInMeters = (data.height / 10).toFixed(1);
+      document.getElementById('pokemonHeight').textContent = `${heightInMeters} m`;
+
+
+      // Peso (hectogramas -> kg)
+      const weightInKg = (data.weight / 10).toFixed(1);
+      document.getElementById('pokemonWeight').textContent = `${weightInKg} kg`;
+
+
+      // Habilidade (primeira)
+      document.getElementById('pokemonAbility').textContent =
+        data.abilities[0].ability.name.replace('-', ' ');
+
+
+      // Experiência base
+      document.getElementById('pokemonExp').textContent = data.base_experience;
+
+
+      // Tipos
+      const typesContainer = document.getElementById('typesContainer');
+      typesContainer.innerHTML = '';
+      data.types.forEach(typeInfo => {
+        const typeName = typeInfo.type.name;
+        const badge = document.createElement('span');
+        badge.className = `type-badge type-${typeName}`;
+        badge.textContent = typeName;
+        typesContainer.appendChild(badge);
+      });
+
+
+      // Mostrar card
+      const card = document.getElementById('pokemonCard');
+      card.classList.add('show');
+     
+      // Esconder erro
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+
+    function buscarPokemon() {
+      const nome = document.getElementById('pokemonInput').value.trim();
+      if (!nome) {
+        alert('Digite o nome de um Pokémon!');
+        return;
+      }
+      buscarPokemonNome(nome);
+    }
+
+
+    function buscarPokemonNome(nome) {
+      // Esconder resultados anteriores
+      document.getElementById('pokemonCard').classList.remove('show');
+      document.getElementById('errorMessage').classList.remove('show');
+     
+      // Mostrar loading
+      document.getElementById('loading').classList.add('show');
+
+
+      buscarPokemonAPI(nome)
+        .then(data => {
+          document.getElementById('loading').classList.remove('show');
+          mostrarPokemon(data);
+        })
+        .catch(error => {
+          document.getElementById('loading').classList.remove('show');
+          document.getElementById('errorMessage').classList.add('show');
+          console.error('Erro:', error);
+        });
+    }
+
+
+    // Buscar ao pressionar Enter
+    document.getElementById('pokemonInput').addEventListener('keyup', (event) => {
+      if (event.key === 'Enter') {
+        buscarPokemon();
+      }
+    });
+
+
+    // Buscar automaticamente ao digitar (com debounce)
+    let timeoutId;
+    document.getElementById('pokemonInput').addEventListener('input', (event) => {
+      clearTimeout(timeoutId);
+      const nome = event.target.value.trim();
+      if (nome.length >= 3) {
+        timeoutId = setTimeout(() => {
+          buscarPokemonNome(nome);
+        }, 500);
+      }
+    });
+
+
+    // Carregar um Pokémon padrão ao abrir
+    window.addEventListener('load', () => {
+      buscarPokemonNome('pikachu');
+    });
+  </script>
+</body>
+</html>
