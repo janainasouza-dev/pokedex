@@ -10,7 +10,17 @@
       max-width: 600px;
       margin: 50px auto;
       padding: 20px;
-      background: linear-gradient(135deg, #f5f7fa 0% );
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .type-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: black;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: capitalize;
+    letter-spacing: 0.5px;
     }
 
     .container {
@@ -23,10 +33,9 @@
 
     #pokemonImage {
     image-rendering: pixelated; /* Mantém o estilo pixel art */
-    image-rendering: crisp-edges; /* Para navegadores antigos */
     width: 150px; /* Ajuste conforme necessário */
     height: 150px;
-  }
+    }
 
 
   </style>
@@ -76,13 +85,7 @@
 
     <div class="error-message" id="errorMessage">
     </div>
-
-
-      
-      
-      
     </div>
-  </div>
 
 
   <script>
@@ -136,12 +139,18 @@
 
 
       // Habilidade (primeira)
-      document.getElementById('pokemonAbility').textContent =
-        data.abilities[0].ability.name.replace('-', ' ');
+      const habilidades = data.abilities 
+        .map(item => {
+          const nome = item.ability.name.replaceAll('-', ' ');
+          return item.is_hidden ? `${nome} (oculta)` : nome;
 
+      })
+        .join(', ');
+
+      document.getElementById('pokemonAbility').textContent = habilidades;
 
       // Experiência base
-      document.getElementById('pokemonExp').textContent = data.base_experience;
+      document.getElementById('pokemonExp').textContent = data.base_experience ?? 'N/A';
 
 
       // Tipos
